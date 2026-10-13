@@ -1,0 +1,41 @@
+# CMake build directories
+build/
+cmake-build-*/
+out/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.VC.db
+*.VC.opendb
+
+# Compiled files
+*.exe
+*.dll
+*.lib
+*.obj
+*.pdb
+*.ilk
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# Python / notebooks (future tooling)
+__pycache__/
+.ipynb_checkpoints/
+
+# Training outputs
+checkpoints/
+runs/
+training_output/
+
+# Local environment configuration
+.env
+.env.local
