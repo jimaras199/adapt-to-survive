@@ -13,6 +13,7 @@ compile_commands.json
 *.user
 *.VC.db
 *.VC.opendb
+CMakeSettings.json
 
 # Compiled files
 *.exe
@@ -39,3 +40,6 @@ training_output/
 # Local environment configuration
 .env
 .env.local
+
+# vcpkg generated dependencies
+vcpkg_installed/

@@ -12,3 +12,28 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_executable(ats_game
     src/main.cpp
 )
+
+target_include_directories(ats_game PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+include(CTest)
+
+if(BUILD_TESTING)
+    find_package(GTest CONFIG REQUIRED)
+
+    add_executable(ats_tests
+        tests/Vector2Tests.cpp
+    )
+
+    target_include_directories(ats_tests PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    )
+
+    target_link_libraries(ats_tests PRIVATE
+        GTest::gtest_main
+    )
+
+    include(GoogleTest)
+    gtest_discover_tests(ats_tests)
+endif()
