@@ -26,6 +26,7 @@ if(BUILD_TESTING)
     tests/Vector2Tests.cpp
     tests/Transform2DTests.cpp
     tests/MovementSystemTests.cpp
+    tests/FixedStepRunnerTests.cpp
     )
 
     target_include_directories(ats_tests PRIVATE
