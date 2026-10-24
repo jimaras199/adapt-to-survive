@@ -23,7 +23,8 @@ if(BUILD_TESTING)
     find_package(GTest CONFIG REQUIRED)
 
     add_executable(ats_tests
-        tests/Vector2Tests.cpp
+    tests/Vector2Tests.cpp
+    tests/Transform2DTests.cpp
     )
 
     target_include_directories(ats_tests PRIVATE
