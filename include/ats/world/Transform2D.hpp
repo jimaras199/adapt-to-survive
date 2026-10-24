@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include "ats/math/Vector2.hpp"
 
 namespace ats::world

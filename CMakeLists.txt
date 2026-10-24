@@ -25,6 +25,7 @@ if(BUILD_TESTING)
     add_executable(ats_tests
     tests/Vector2Tests.cpp
     tests/Transform2DTests.cpp
+    tests/MovementSystemTests.cpp
     )
 
     target_include_directories(ats_tests PRIVATE
