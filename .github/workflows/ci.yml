@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install vcpkg
         shell: pwsh
@@ -25,9 +25,38 @@ jobs:
           & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
 
       - name: Set up MSVC environment
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: amd64
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+
+          $vs = & $vswhere -latest -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            -property installationPath
+
+          if (-not $vs) {
+            throw "Visual Studio with MSVC tools not found"
+          }
+
+          $beforePath = $env:PATH -split ';'
+
+          Import-Module (Join-Path $vs "Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
+
+          Enter-VsDevShell -VsInstallPath $vs `
+            -SkipAutomaticLocation `
+            -DevCmdArguments '-arch=x64 -host_arch=x64'
+
+          if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
+            throw "MSVC compiler initialization failed"
+          }
+
+          $env:PATH -split ';' |
+            Where-Object { $_ -and $beforePath -notcontains $_ } |
+            Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+
+          foreach ($name in @('INCLUDE', 'LIB', 'LIBPATH')) {
+            "$name=$([Environment]::GetEnvironmentVariable($name))" |
+              Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          }
 
       - name: Configure CMake
         shell: pwsh
