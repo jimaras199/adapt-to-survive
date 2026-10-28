@@ -28,6 +28,7 @@ if(BUILD_TESTING)
     tests/MovementSystemTests.cpp
     tests/FixedStepRunnerTests.cpp
     tests/WorldTests.cpp
+    tests/SimulationTests.cpp
     )
 
     target_include_directories(ats_tests PRIVATE
