@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ats/world/Agent.hpp"
+#include <entt/entt.hpp>
 
 namespace ats::simulation
 {
@@ -12,19 +12,37 @@ namespace ats::world
     class World
     {
     public:
-        const Agent& GetAgent() const noexcept
+        entt::entity CreateEntity()
         {
-            return agent_;
+            return registry_.create();
+        }
+
+        void DestroyEntity(entt::entity entity)
+        {
+            registry_.destroy(entity);
+        }
+
+        bool IsValidEntity(entt::entity entity) const
+        {
+            return registry_.valid(entity);
+        }
+
+        std::size_t EntityCount() const
+        {
+            return registry_.view<entt::entity>().size();
+        }
+
+        entt::registry& GetRegistry() noexcept
+        {
+            return registry_;
+        }
+
+        const entt::registry& GetRegistry() const noexcept
+        {
+            return registry_;
         }
 
     private:
-        Agent agent_{};
-
-        Transform2D& MutableAgentTransform() noexcept
-        {
-            return agent_.transform;
-        }
-
-        friend class ats::simulation::Simulation;
+        entt::registry registry_{};
     };
 }

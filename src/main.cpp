@@ -1,19 +1,21 @@
-#include <iostream>
-#include "ats/math/Vector2.hpp"
+#include <utility>
+
+#include "ats/simulation/Simulation.hpp"
+#include "ats/world/World.hpp"
 
 int main()
 {
-    ats::math::Vector2 position{ 10.0, 20.0 };
-    ats::math::Vector2 movement{ 3.0, -2.0 };
+    ats::world::World world;
 
-    const ats::math::Vector2 newPosition = position + movement;
+    ats::simulation::Simulation simulation(
+        0.02,
+        std::move(world)
+    );
 
-    std::cout << "Adapt to Survive\n";
-    std::cout << "Original position: "
-        << position.x << ", " << position.y << '\n';
-
-    std::cout << "New position: "
-        << newPosition.x << ", " << newPosition.y << '\n';
+    for (int i = 0; i < 100; ++i)
+    {
+        simulation.Tick();
+    }
 
     return 0;
 }

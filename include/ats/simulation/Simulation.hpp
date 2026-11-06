@@ -1,12 +1,8 @@
 #pragma once
 
-#include <cmath>
 #include <cstdint>
-#include <stdexcept>
 
 #include "ats/simulation/FixedStepRunner.hpp"
-#include "ats/simulation/MovementCommand.hpp"
-#include "ats/world/MovementSystem.hpp"
 #include "ats/world/World.hpp"
 
 namespace ats::simulation
@@ -14,48 +10,18 @@ namespace ats::simulation
     class Simulation
     {
     public:
-        Simulation(
-            double fixedDeltaTime,
-            double movementSpeed,
-            double rotationSpeed
-        )
-            : runner_(fixedDeltaTime),
-            movementSpeed_(movementSpeed),
-            rotationSpeed_(rotationSpeed)
+        explicit Simulation(double fixedDeltaTime, ats::world::World world)
+            : world_(std::move(world)),
+            runner_(fixedDeltaTime)
         {
-            if (!std::isfinite(movementSpeed_) || movementSpeed_ < 0.0)
-            {
-                throw std::invalid_argument(
-                    "Movement speed must be finite and non-negative"
-                );
-            }
-
-            if (!std::isfinite(rotationSpeed_) || rotationSpeed_ < 0.0)
-            {
-                throw std::invalid_argument(
-                    "Rotation speed must be finite and non-negative"
-                );
-            }
-        }
-
-        void SetMovementCommand(const MovementCommand& command)
-        {
-            movementCommand_ = command;
         }
 
         void Tick()
         {
             runner_.RunSteps(1, [this](double deltaTime)
-                {
-                    ats::world::MovementSystem::Update(
-                        world_.MutableAgentTransform(),
-                        movementCommand_.localMovement,
-                        movementCommand_.rotationInput,
-                        movementSpeed_,
-                        rotationSpeed_,
-                        deltaTime
-                    );
-                });
+            {
+                (void)deltaTime;
+            });
         }
 
         const ats::world::World& GetWorld() const noexcept
@@ -74,11 +40,7 @@ namespace ats::simulation
         }
 
     private:
-        ats::world::World world_{};
+        ats::world::World world_;
         FixedStepRunner runner_;
-
-        double movementSpeed_;
-        double rotationSpeed_;
-        MovementCommand movementCommand_{};
     };
 }
