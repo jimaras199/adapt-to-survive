@@ -38,14 +38,19 @@ namespace ats::simulation
             }
         }
 
-        void Step(const MovementCommand& command)
+        void SetMovementCommand(const MovementCommand& command)
         {
-            runner_.RunSteps(1, [this, &command](double deltaTime)
+            movementCommand_ = command;
+        }
+
+        void Tick()
+        {
+            runner_.RunSteps(1, [this](double deltaTime)
                 {
                     ats::world::MovementSystem::Update(
                         world_.MutableAgentTransform(),
-                        command.localMovement,
-                        command.rotationInput,
+                        movementCommand_.localMovement,
+                        movementCommand_.rotationInput,
                         movementSpeed_,
                         rotationSpeed_,
                         deltaTime
@@ -74,5 +79,6 @@ namespace ats::simulation
 
         double movementSpeed_;
         double rotationSpeed_;
+        MovementCommand movementCommand_{};
     };
 }
