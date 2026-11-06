@@ -32,7 +32,8 @@ TEST(SimulationTests, MovesAgentForwardForOneStep)
         .rotationInput = 0.0
     };
 
-    simulation.Step(command);
+    simulation.SetMovementCommand(command);
+    simulation.Tick();
 
     const auto& position =
         simulation.GetWorld().GetAgent().transform.position;
@@ -50,7 +51,8 @@ TEST(SimulationTests, RotatesAgentForOneStep)
         .rotationInput = 1.0
     };
 
-    simulation.Step(command);
+    simulation.SetMovementCommand(command);
+    simulation.Tick();
 
     const double rotation =
         simulation.GetWorld().GetAgent().transform.rotationRadians;
@@ -64,9 +66,12 @@ TEST(SimulationTests, AdvancesStepCounterAndSimulatedTime)
 
     MovementCommand command{};
 
-    simulation.Step(command);
-    simulation.Step(command);
-    simulation.Step(command);
+    simulation.SetMovementCommand(command);
+    simulation.Tick();
+    simulation.SetMovementCommand(command);
+    simulation.Tick();
+    simulation.SetMovementCommand(command);
+    simulation.Tick();
 
     EXPECT_EQ(simulation.CompletedSteps(), 3);
     EXPECT_NEAR(simulation.SimulatedTime(), 0.06, 1e-12);
@@ -134,7 +139,8 @@ TEST(SimulationTests, InvalidCommandDoesNotChangeState)
         .rotationInput = 0.0
     };
 
-    simulation.Step(validCommand);
+    simulation.SetMovementCommand(validCommand);
+    simulation.Tick();
 
     const auto before =
         simulation.GetWorld().GetAgent().transform;
@@ -152,7 +158,8 @@ TEST(SimulationTests, InvalidCommandDoesNotChangeState)
 
     EXPECT_THROW(
         {
-            simulation.Step(invalidCommand);
+            simulation.SetMovementCommand(invalidCommand);
+            simulation.Tick();
         },
         std::invalid_argument
     );
@@ -185,8 +192,10 @@ TEST(SimulationTests, IdenticalCommandsProduceIdenticalResults)
 
     for (const auto& command : commands)
     {
-        first.Step(command);
-        second.Step(command);
+        first.SetMovementCommand(command);
+        first.Tick();
+        second.SetMovementCommand(command);
+        second.Tick();
     }
 
     const auto& firstTransform =
@@ -223,4 +232,68 @@ TEST(SimulationTests, ExposesWorldAsConstReference)
     static_assert(
         std::is_same_v<ReturnType, const ats::world::World&>
         );
+}
+
+TEST(SimulationTests, TickAdvancesWithoutMovementInput)
+{
+    Simulation simulation(0.02, 5.0, 2.0);
+
+    simulation.Tick();
+    simulation.Tick();
+    simulation.Tick();
+
+    EXPECT_EQ(simulation.CompletedSteps(), 3);
+    EXPECT_NEAR(simulation.SimulatedTime(), 0.06, 1e-9);
+
+    const auto& transform =
+        simulation.GetWorld().GetAgent().transform;
+
+    EXPECT_DOUBLE_EQ(transform.position.x, 0.0);
+    EXPECT_DOUBLE_EQ(transform.position.y, 0.0);
+    EXPECT_DOUBLE_EQ(transform.rotationRadians, 0.0);
+}
+
+TEST(SimulationTests, SettingMovementCommandDoesNotAdvanceSimulation)
+{
+    Simulation simulation(0.02, 5.0, 2.0);
+
+    simulation.SetMovementCommand({ { 1.0, 0.0 }, 0.0 });
+
+    EXPECT_EQ(simulation.CompletedSteps(), 0);
+    EXPECT_DOUBLE_EQ(simulation.SimulatedTime(), 0.0);
+
+    const auto& transform =
+        simulation.GetWorld().GetAgent().transform;
+
+    EXPECT_DOUBLE_EQ(transform.position.x, 0.0);
+    EXPECT_DOUBLE_EQ(transform.position.y, 0.0);
+    EXPECT_DOUBLE_EQ(transform.rotationRadians, 0.0);
+}
+
+TEST(SimulationTests, ClearingMovementCommandStopsMovementButNotTime)
+{
+    Simulation simulation(0.02, 5.0, 2.0);
+
+    simulation.SetMovementCommand({ { 1.0, 0.0 }, 0.0 });
+
+    simulation.Tick();
+    simulation.Tick();
+
+    const double positionAfterMoving =
+        simulation.GetWorld().GetAgent().transform.position.x;
+
+    simulation.SetMovementCommand({});
+
+    simulation.Tick();
+    simulation.Tick();
+
+    const auto& transform =
+        simulation.GetWorld().GetAgent().transform;
+
+    EXPECT_DOUBLE_EQ(transform.position.x, positionAfterMoving);
+    EXPECT_DOUBLE_EQ(transform.position.y, 0.0);
+    EXPECT_DOUBLE_EQ(transform.rotationRadians, 0.0);
+
+    EXPECT_EQ(simulation.CompletedSteps(), 4);
+    EXPECT_NEAR(simulation.SimulatedTime(), 0.08, 1e-9);
 }
