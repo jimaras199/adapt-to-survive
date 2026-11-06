@@ -9,12 +9,18 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(EnTT CONFIG REQUIRED)
+
 add_executable(ats_game
     src/main.cpp
 )
 
 target_include_directories(ats_game PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+target_link_libraries(ats_game PRIVATE
+    EnTT::EnTT
 )
 
 include(CTest)
@@ -37,6 +43,7 @@ if(BUILD_TESTING)
 
     target_link_libraries(ats_tests PRIVATE
         GTest::gtest_main
+        EnTT::EnTT
     )
 
     include(GoogleTest)
