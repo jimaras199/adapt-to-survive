@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
-
+#include "ats/world/EcsMovementSystem.hpp"
 #include "ats/simulation/Simulation.hpp"
 #include "ats/world/Transform2D.hpp"
 #include "ats/world/World.hpp"
@@ -248,4 +248,82 @@ TEST(SimulationTests, RejectsSystemRegistrationDuringTick)
 
     EXPECT_EQ(simulation.CompletedSteps(), 0);
     EXPECT_DOUBLE_EQ(simulation.SimulatedTime(), 0.0);
+}
+
+TEST(SimulationTests, TickUpdatesEcsMovement)
+{
+    ats::world::World world;
+
+    const auto entity = world.CreateEntity();
+    auto& registry = world.GetRegistry();
+
+    registry.emplace<ats::world::Transform2D>(entity);
+
+    registry.emplace<ats::world::MovementInput>(entity, ats::math::Vector2{ 1.0, 0.0 }, 0.0);
+
+    registry.emplace<ats::world::MovementConfig>(entity, 3.0, 2.0);
+
+    ats::simulation::Simulation simulation(0.02, std::move(world));
+
+    simulation.AddSystem(
+        [](ats::world::World& world, double deltaTime)
+        {
+            ats::world::EcsMovementSystem movementSystem;
+            movementSystem.Update(world, deltaTime);
+        }
+    );
+
+    simulation.Tick();
+    simulation.Tick();
+    simulation.Tick();
+
+    const auto& transform = simulation.GetWorld().GetRegistry().get<ats::world::Transform2D>(entity);
+
+    EXPECT_NEAR(transform.position.x, 0.18, 1e-9);
+    EXPECT_NEAR(transform.position.y, 0.0, 1e-9);
+
+    EXPECT_EQ(simulation.CompletedSteps(), 3);
+    EXPECT_NEAR(simulation.SimulatedTime(), 0.06, 1e-9);
+}
+
+TEST(SimulationTests, MovementIsNotUpdatedWithoutRegistration)
+{
+    ats::world::World world;
+
+    const auto entity = world.CreateEntity();
+    auto& registry = world.GetRegistry();
+
+    registry.emplace<ats::world::Transform2D>(entity);
+
+    registry.emplace<ats::world::MovementInput>(
+        entity,
+        ats::math::Vector2{ 1.0, 0.0 },
+        0.0
+    );
+
+    registry.emplace<ats::world::MovementConfig>(
+        entity,
+        3.0,
+        2.0
+    );
+
+    ats::simulation::Simulation simulation(
+        0.02,
+        std::move(world)
+    );
+
+    simulation.Tick();
+    simulation.Tick();
+    simulation.Tick();
+
+    const auto& transform =
+        simulation.GetWorld()
+        .GetRegistry()
+        .get<ats::world::Transform2D>(entity);
+
+    EXPECT_DOUBLE_EQ(transform.position.x, 0.0);
+    EXPECT_DOUBLE_EQ(transform.position.y, 0.0);
+
+    EXPECT_EQ(simulation.CompletedSteps(), 3);
+    EXPECT_NEAR(simulation.SimulatedTime(), 0.06, 1e-9);
 }
