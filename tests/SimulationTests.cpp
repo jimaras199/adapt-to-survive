@@ -144,3 +144,108 @@ TEST(SimulationTests, ExposesWorldAsConstReference)
         std::is_same_v<ReturnType, const ats::world::World&>
         );
 }
+
+TEST(SimulationTests, TickExecutesRegisteredSystems)
+{
+    ats::world::World world;
+    ats::simulation::Simulation simulation(0.02, std::move(world));
+
+    int executionCount = 0;
+
+    simulation.AddSystem(
+        [&executionCount](ats::world::World&, double)
+        {
+            ++executionCount;
+        }
+    );
+
+    simulation.Tick();
+    simulation.Tick();
+    simulation.Tick();
+
+    EXPECT_EQ(executionCount, 3);
+    EXPECT_EQ(simulation.CompletedSteps(), 3);
+    EXPECT_DOUBLE_EQ(simulation.SimulatedTime(), 0.06);
+}
+
+TEST(SimulationTests, RegisteredSystemModifiesWorld)
+{
+    ats::world::World world;
+    ats::simulation::Simulation simulation(0.02, std::move(world));
+
+    simulation.AddSystem(
+        [](ats::world::World& world, double)
+        {
+            world.CreateEntity();
+        }
+    );
+
+    simulation.Tick();
+
+    EXPECT_EQ(simulation.GetWorld().EntityCount(), 1);
+}
+
+TEST(SimulationTests, FailedTickDoesNotAdvanceTime)
+{
+    ats::world::World world;
+    ats::simulation::Simulation simulation(0.02, std::move(world));
+
+    simulation.AddSystem(
+        [](ats::world::World&, double)
+        {
+            throw std::runtime_error("System failure");
+        }
+    );
+
+    EXPECT_THROW(simulation.Tick(), std::runtime_error);
+
+    EXPECT_EQ(simulation.CompletedSteps(), 0);
+    EXPECT_DOUBLE_EQ(simulation.SimulatedTime(), 0.0);
+}
+
+TEST(SimulationTests, FailedTickDoesNotRollbackWorldChanges)
+{
+    ats::world::World world;
+    ats::simulation::Simulation simulation(0.02, std::move(world));
+
+    simulation.AddSystem(
+        [](ats::world::World& world, double)
+        {
+            world.CreateEntity();
+        }
+    );
+
+    simulation.AddSystem(
+        [](ats::world::World&, double)
+        {
+            throw std::runtime_error("System failure");
+        }
+    );
+
+    EXPECT_THROW(simulation.Tick(), std::runtime_error);
+
+    EXPECT_EQ(simulation.GetWorld().EntityCount(), 1);
+    EXPECT_EQ(simulation.CompletedSteps(), 0);
+}
+
+TEST(SimulationTests, RejectsSystemRegistrationDuringTick)
+{
+    ats::world::World world;
+    ats::simulation::Simulation simulation(0.02, std::move(world));
+
+    simulation.AddSystem(
+        [&simulation](ats::world::World&, double)
+        {
+            simulation.AddSystem(
+                [](ats::world::World&, double)
+                {
+                }
+            );
+        }
+    );
+
+    EXPECT_THROW(simulation.Tick(), std::logic_error);
+
+    EXPECT_EQ(simulation.CompletedSteps(), 0);
+    EXPECT_DOUBLE_EQ(simulation.SimulatedTime(), 0.0);
+}
