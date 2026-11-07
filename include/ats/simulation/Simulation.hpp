@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <utility>
 
 #include "ats/simulation/FixedStepRunner.hpp"
+#include "ats/simulation/SystemScheduler.hpp"
 #include "ats/world/World.hpp"
 
 namespace ats::simulation
@@ -16,11 +18,16 @@ namespace ats::simulation
         {
         }
 
+        void AddSystem(SystemScheduler::SystemCallback system)
+        {
+            scheduler_.AddSystem(std::move(system));
+        }
+
         void Tick()
         {
             runner_.RunSteps(1, [this](double deltaTime)
             {
-                (void)deltaTime;
+                scheduler_.Update(world_, deltaTime);
             });
         }
 
@@ -42,5 +49,6 @@ namespace ats::simulation
     private:
         ats::world::World world_;
         FixedStepRunner runner_;
+        SystemScheduler scheduler_;
     };
 }
