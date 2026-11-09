@@ -38,6 +38,7 @@ if(BUILD_TESTING)
     tests/SystemSchedulerTests.cpp
     tests/EcsMovementSystemTests.cpp
     tests/HeadlessRunnerTests.cpp
+    tests/SurvivalStateTests.cpp
     )
 
     target_include_directories(ats_tests PRIVATE
