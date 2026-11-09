@@ -6,6 +6,8 @@
 #include "ats/simulation/HeadlessRunner.hpp"
 #include "ats/simulation/Simulation.hpp"
 #include "ats/world/World.hpp"
+#include "ats/world/SurvivalDepletionSystem.hpp"
+#include "ats/world/SurvivalState.hpp"
 
 TEST(HeadlessRunnerTests, ZeroStepsDoesNotAdvanceSimulation)
 {
@@ -72,4 +74,44 @@ TEST(HeadlessRunnerTests, ExecutesRegisteredSystems)
     EXPECT_EQ(systemCalls, 25);
     EXPECT_EQ(result.completedSteps, 25);
     EXPECT_NEAR(result.simulatedTime, 0.5, 1e-9);
+}
+
+TEST(HeadlessRunnerTests, DepletesSurvivalReservesDuringHeadlessExecution)
+{
+    ats::world::World world;
+
+    const auto entity = world.CreateEntity();
+    auto& registry = world.GetRegistry();
+
+    registry.emplace<ats::world::SurvivalState>(entity);
+
+    ats::simulation::Simulation simulation(
+        0.02,
+        std::move(world)
+    );
+
+    ats::world::SurvivalDepletionSystem depletionSystem;
+
+    simulation.AddSystem(
+        [depletionSystem](ats::world::World& world, double deltaTime)
+        {
+            depletionSystem.Update(world, deltaTime);
+        }
+    );
+
+    ats::simulation::HeadlessRunner runner(simulation);
+
+    const auto result = runner.Run(3000);
+
+    const auto& state =
+        simulation.GetWorld()
+        .GetRegistry()
+        .get<ats::world::SurvivalState>(entity);
+
+    EXPECT_NEAR(state.food, 0.0, 1e-9);
+    EXPECT_DOUBLE_EQ(state.water, 0.0);
+    EXPECT_DOUBLE_EQ(state.health, 100.0);
+
+    EXPECT_EQ(result.completedSteps, 3000);
+    EXPECT_NEAR(result.simulatedTime, 60.0, 1e-9);
 }

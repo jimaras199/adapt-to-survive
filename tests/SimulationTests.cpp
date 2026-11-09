@@ -7,6 +7,8 @@
 #include "ats/simulation/Simulation.hpp"
 #include "ats/world/Transform2D.hpp"
 #include "ats/world/World.hpp"
+#include "ats/world/SurvivalDepletionSystem.hpp"
+#include "ats/world/SurvivalState.hpp"
 
 using namespace ats::simulation;
 
@@ -326,4 +328,45 @@ TEST(SimulationTests, MovementIsNotUpdatedWithoutRegistration)
 
     EXPECT_EQ(simulation.CompletedSteps(), 3);
     EXPECT_NEAR(simulation.SimulatedTime(), 0.06, 1e-9);
+}
+
+TEST(SimulationTests, TickUpdatesSurvivalReserves)
+{
+    ats::world::World world;
+
+    const auto entity = world.CreateEntity();
+    auto& registry = world.GetRegistry();
+
+    registry.emplace<ats::world::SurvivalState>(entity);
+
+    ats::simulation::Simulation simulation(
+        0.02,
+        std::move(world)
+    );
+
+    ats::world::SurvivalDepletionSystem depletionSystem;
+
+    simulation.AddSystem(
+        [depletionSystem](ats::world::World& world, double deltaTime)
+        {
+            depletionSystem.Update(world, deltaTime);
+        }
+    );
+
+    for (int i = 0; i < 500; ++i)
+    {
+        simulation.Tick();
+    }
+
+    const auto& state =
+        simulation.GetWorld()
+        .GetRegistry()
+        .get<ats::world::SurvivalState>(entity);
+
+    EXPECT_NEAR(state.food, 83.3333333333, 1e-9);
+    EXPECT_NEAR(state.water, 80.8333333333, 1e-9);
+    EXPECT_DOUBLE_EQ(state.health, 100.0);
+
+    EXPECT_EQ(simulation.CompletedSteps(), 500);
+    EXPECT_NEAR(simulation.SimulatedTime(), 10.0, 1e-9);
 }
