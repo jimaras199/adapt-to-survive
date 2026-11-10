@@ -39,7 +39,10 @@ if(BUILD_TESTING)
     tests/EcsMovementSystemTests.cpp
     tests/HeadlessRunnerTests.cpp
     tests/SurvivalStateTests.cpp
-    tests/SurvivalDepletionSystemTests.cpp)
+    tests/SurvivalDepletionSystemTests.cpp
+    tests/SurvivalDamageSystemTests.cpp
+    tests/HealthApplicationSystemTests.cpp
+    tests/DamageResetSystemTests.cpp)
 
     target_include_directories(ats_tests PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
