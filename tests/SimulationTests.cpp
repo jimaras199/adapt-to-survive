@@ -9,6 +9,10 @@
 #include "ats/world/World.hpp"
 #include "ats/world/SurvivalDepletionSystem.hpp"
 #include "ats/world/SurvivalState.hpp"
+#include "ats/world/DamageAccumulator.hpp"
+#include "ats/world/DamageResetSystem.hpp"
+#include "ats/world/HealthApplicationSystem.hpp"
+#include "ats/world/SurvivalDamageSystem.hpp"
 
 using namespace ats::simulation;
 
@@ -366,6 +370,91 @@ TEST(SimulationTests, TickUpdatesSurvivalReserves)
     EXPECT_NEAR(state.food, 83.3333333333, 1e-9);
     EXPECT_NEAR(state.water, 80.8333333333, 1e-9);
     EXPECT_DOUBLE_EQ(state.health, 100.0);
+
+    EXPECT_EQ(simulation.CompletedSteps(), 500);
+    EXPECT_NEAR(simulation.SimulatedTime(), 10.0, 1e-9);
+}
+
+TEST(SimulationTests, AppliesSurvivalDamageAcrossMultipleTicks)
+{
+    ats::world::World world;
+    auto& registry = world.GetRegistry();
+
+    const auto entity = world.CreateEntity();
+
+    auto& state =
+        registry.emplace<ats::world::SurvivalState>(entity);
+
+    registry.emplace<ats::world::DamageAccumulator>(entity);
+
+    state.food = 0.0;
+    state.water = 100.0;
+
+    ats::simulation::Simulation simulation(
+        0.02,
+        std::move(world)
+    );
+
+    ats::world::DamageResetSystem resetSystem;
+    ats::world::SurvivalDepletionSystem depletionSystem;
+    ats::world::SurvivalDamageSystem damageSystem;
+    ats::world::HealthApplicationSystem healthSystem;
+
+    simulation.AddSystem(
+        [resetSystem](ats::world::World& world, double)
+        {
+            resetSystem.Update(world);
+        }
+    );
+
+    simulation.AddSystem(
+        [depletionSystem](ats::world::World& world, double deltaTime)
+        {
+            depletionSystem.Update(world, deltaTime);
+        }
+    );
+
+    simulation.AddSystem(
+        [damageSystem](ats::world::World& world, double deltaTime)
+        {
+            damageSystem.Update(world, deltaTime);
+        }
+    );
+
+    simulation.AddSystem(
+        [healthSystem](ats::world::World& world, double)
+        {
+            healthSystem.Update(world);
+        }
+    );
+
+    for (int i = 0; i < 500; ++i)
+    {
+        simulation.Tick();
+    }
+
+    const auto& finalState =
+        simulation.GetWorld()
+        .GetRegistry()
+        .get<ats::world::SurvivalState>(entity);
+
+    const auto& accumulator =
+        simulation.GetWorld()
+        .GetRegistry()
+        .get<ats::world::DamageAccumulator>(entity);
+
+    EXPECT_NEAR(finalState.health, 100.0 - (100.0 / 60.0) * 10.0, 1e-9);
+
+    EXPECT_DOUBLE_EQ(finalState.food, 0.0);
+    EXPECT_NEAR(finalState.water, 80.8333333333, 1e-9);
+
+    EXPECT_NEAR(
+        accumulator.internalDamage,
+        (100.0 / 60.0) * 0.02,
+        1e-12
+    );
+
+    EXPECT_DOUBLE_EQ(accumulator.externalDamage, 0.0);
 
     EXPECT_EQ(simulation.CompletedSteps(), 500);
     EXPECT_NEAR(simulation.SimulatedTime(), 10.0, 1e-9);
