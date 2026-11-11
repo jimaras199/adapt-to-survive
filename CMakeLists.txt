@@ -10,9 +10,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(EnTT CONFIG REQUIRED)
+find_package(SFML 3 COMPONENTS Graphics Window CONFIG REQUIRED)
 
 add_executable(ats_game
     src/main.cpp
+    src/render/SfmlRenderer.cpp
 )
 
 target_include_directories(ats_game PRIVATE
@@ -21,6 +23,8 @@ target_include_directories(ats_game PRIVATE
 
 target_link_libraries(ats_game PRIVATE
     EnTT::EnTT
+    SFML::Graphics
+    SFML::Window
 )
 
 include(CTest)
@@ -42,7 +46,8 @@ if(BUILD_TESTING)
     tests/SurvivalDepletionSystemTests.cpp
     tests/SurvivalDamageSystemTests.cpp
     tests/HealthApplicationSystemTests.cpp
-    tests/DamageResetSystemTests.cpp)
+    tests/DamageResetSystemTests.cpp
+    tests/WorldBoundsTests.cpp)
 
     target_include_directories(ats_tests PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
