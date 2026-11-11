@@ -1,20 +1,44 @@
 #include <utility>
 
+#include "ats/render/SfmlRenderer.hpp"
 #include "ats/simulation/Simulation.hpp"
 #include "ats/world/World.hpp"
+#include "ats/world/WorldBounds.hpp"
+#include "ats/world/Transform2D.hpp"
+#include "ats/world/AgentTag.hpp"
+#include <entt/entity/fwd.hpp>
+#include <ats/math/Vector2.hpp>
 
 int main()
 {
     ats::world::World world;
 
-    ats::simulation::Simulation simulation(
-        0.02,
-        std::move(world)
+    const entt::entity agent = world.CreateEntity();
+
+    world.GetRegistry().emplace<ats::world::AgentTag>(agent);
+
+    world.GetRegistry().emplace<ats::world::Transform2D>(
+        agent,
+        ats::math::Vector2{ 250.0, 250.0 },
+        0.0
     );
 
-    for (int i = 0; i < 100; ++i)
+    ats::simulation::Simulation simulation(0.02, std::move(world));
+
+    ats::render::SfmlRenderer renderer(
+        simulation.GetWorld().GetBounds()
+    );
+
+    while (renderer.IsOpen())
     {
-        simulation.Tick();
+        renderer.ProcessEvents();
+
+        if (!renderer.IsOpen())
+        {
+            break;
+        }
+
+        renderer.Render(simulation.GetWorld());
     }
 
     return 0;

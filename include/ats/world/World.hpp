@@ -1,6 +1,9 @@
 #pragma once
 
 #include <entt/entt.hpp>
+#include <cmath>
+#include <stdexcept>
+#include "ats/world/WorldBounds.hpp"
 
 namespace ats::simulation
 {
@@ -12,6 +15,26 @@ namespace ats::world
     class World
     {
     public:
+
+        explicit World(WorldBounds bounds = {})
+            : bounds_(bounds)
+        {
+            if (!std::isfinite(bounds_.width) ||
+                !std::isfinite(bounds_.height) ||
+                bounds_.width <= 0.0 ||
+                bounds_.height <= 0.0)
+            {
+                throw std::invalid_argument(
+                    "World dimensions must be finite and positive"
+                );
+            }
+        }
+
+        const WorldBounds& GetBounds() const noexcept
+        {
+            return bounds_;
+        }
+
         entt::entity CreateEntity()
         {
             return registry_.create();
@@ -43,6 +66,7 @@ namespace ats::world
         }
 
     private:
+        WorldBounds bounds_;
         entt::registry registry_{};
     };
 }
