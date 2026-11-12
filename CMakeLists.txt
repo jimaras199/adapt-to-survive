@@ -47,7 +47,8 @@ if(BUILD_TESTING)
     tests/SurvivalDamageSystemTests.cpp
     tests/HealthApplicationSystemTests.cpp
     tests/DamageResetSystemTests.cpp
-    tests/WorldBoundsTests.cpp)
+    tests/WorldBoundsTests.cpp
+    tests/TreeTests.cpp)
 
     target_include_directories(ats_tests PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"

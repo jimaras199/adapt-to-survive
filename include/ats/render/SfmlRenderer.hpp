@@ -20,6 +20,7 @@ namespace ats::render
 
     private:
         void DrawGround();
+        void DrawTrees(const ats::world::World& world);
         void DrawAgents(const ats::world::World& world);
         void UpdateView();
 
