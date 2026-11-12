@@ -7,6 +7,7 @@
 #include "ats/world/World.hpp"
 #include "ats/world/AgentTag.hpp"
 #include "ats/world/Transform2D.hpp"
+#include "ats/world/Tree.hpp"
 
 namespace ats::render
 {
@@ -36,6 +37,7 @@ namespace ats::render
         m_window.setView(m_worldView);
 
         DrawGround();
+        DrawTrees(world);
         DrawAgents(world);
 
         m_window.display();
@@ -82,6 +84,37 @@ namespace ats::render
             circle.setFillColor(sf::Color::Blue);
 
             m_window.draw(circle);
+        }
+    }
+
+    void SfmlRenderer::DrawTrees(const ats::world::World& world)
+    {
+        const auto& registry = world.GetRegistry();
+
+        auto view = registry.view<
+            const ats::world::Tree,
+            const ats::world::Transform2D
+        >();
+
+        for (const auto entity : view)
+        {
+            const auto& tree = view.get<const ats::world::Tree>(entity);
+            const auto& transform = view.get<const ats::world::Transform2D>(entity);
+
+            const float radius = static_cast<float>(tree.canopyRadius);
+
+            sf::CircleShape canopy(radius);
+
+            canopy.setOrigin({ radius, radius });
+
+            canopy.setPosition({
+                static_cast<float>(transform.position.x),
+                static_cast<float>(transform.position.y)
+                });
+
+            canopy.setFillColor(sf::Color(40, 110, 40));
+
+            m_window.draw(canopy);
         }
     }
 
